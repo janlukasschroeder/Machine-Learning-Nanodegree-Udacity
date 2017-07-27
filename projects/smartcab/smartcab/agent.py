@@ -8,7 +8,7 @@ class LearningAgent(Agent):
     """ An agent that learns to drive in the Smartcab world.
         This is the object you will be modifying. """ 
 
-    def __init__(self, env, learning=False, epsilon=1.0, alpha=0.5):
+    def __init__(self, env, learning=True, epsilon=1.0, alpha=0.5):
         super(LearningAgent, self).__init__(env)     # Set the agent in the evironment 
         self.planner = RoutePlanner(self.env, self)  # Create a route planner
         self.valid_actions = self.env.valid_actions  # The set of valid actions
@@ -24,6 +24,7 @@ class LearningAgent(Agent):
         ###########
         # Set any additional class parameters as needed
 
+        self.n_trials = 0
 
     def reset(self, destination=None, testing=False):
         """ The reset function is called at the beginning of each trial.
@@ -39,6 +40,12 @@ class LearningAgent(Agent):
         # Update epsilon using a decay function of your choice
         # Update additional class parameters as needed
         # If 'testing' is True, set epsilon and alpha to 0
+
+        if testing:
+            self.epsilon = 0
+            self.alpha = 0
+        else:
+            self.epsilon -= 0.05
 
         return None
 
@@ -70,7 +77,7 @@ class LearningAgent(Agent):
         ###########
         # Calculate the maximum Q-value of all actions for a given state
 
-        maxQ = None
+        maxQ = max(self.Q[state], key=self.Q[state].get)
 
         return maxQ 
 
@@ -85,19 +92,14 @@ class LearningAgent(Agent):
         # If it is not, create a new dictionary for that state
         #   Then, for each action available, set the initial Q-value to 0.0
 
-        print 'state',state
+        if self.learning == True:
+            if state not in self.Q.keys():
+                new_dict = dict()
+                for action in self.valid_actions:
+                    if action != 'None':
+                        new_dict[action] = 0.0
 
-        if self.Q.get(state) == 'none':
-            new_dict = {}
-            # for each action available, set the initial Q-value to 0.0
-            for action in self.valid_actions:
-                new_dict[action] = 0.0
-
-            self.Q[state] = new_dict
-
-        print ('\n\n\n\nself.Q')
-        print (self.Q)
-        print ('\n\n\n\n')
+                self.Q[state] = new_dict
 
         return
 
@@ -118,7 +120,10 @@ class LearningAgent(Agent):
         # When learning, choose a random action with 'epsilon' probability
         #   Otherwise, choose an action with the highest Q-value for the current state
 
-        action = self.valid_actions[random.randint(0, len(self.valid_actions)-1)]
+        if self.learning == True:
+            action = self.get_maxQ(state)
+        else:
+            action = self.valid_actions[random.randint(0, len(self.valid_actions)-1)]
 
         return action
 
@@ -133,6 +138,12 @@ class LearningAgent(Agent):
         ###########
         # When learning, implement the value iteration update rule
         #   Use only the learning rate 'alpha' (do not use the discount factor 'gamma')
+
+        if self.learning == True:
+            self.env.act(self, self.choose_action(state))
+            next_state = self.build_state()
+            self.createQ(next_state)
+            self.Q[state][action] = self.alpha * reward + (1 - self.alpha) * self.Q[state][action]
 
         return
 
@@ -184,7 +195,7 @@ def run():
     #   display      - set to False to disable the GUI if PyGame is enabled
     #   log_metrics  - set to True to log trial and simulation results to /logs
     #   optimized    - set to True to change the default log file name
-    sim = Simulator(env, display=True, update_delay=0.01, log_metrics=True)
+    sim = Simulator(env, display=False, update_delay=0.01, log_metrics=True)
     
     ##############
     # Run the simulator
