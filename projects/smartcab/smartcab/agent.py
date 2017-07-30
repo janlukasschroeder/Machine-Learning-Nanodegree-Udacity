@@ -25,6 +25,7 @@ class LearningAgent(Agent):
         # Set any additional class parameters as needed
 
         self.decay_factor = 0.995
+        # self.decay_factor = 0.05
 
     def reset(self, destination=None, testing=False):
         """ The reset function is called at the beginning of each trial.
@@ -46,6 +47,7 @@ class LearningAgent(Agent):
             self.alpha = 0
         else:
             self.epsilon *= self.decay_factor
+            # self.epsilon -= self.decay_factor
 
         return None
 
