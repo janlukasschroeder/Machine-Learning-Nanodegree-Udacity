@@ -42,7 +42,7 @@ class LearningAgent(Agent):
         # Update additional class parameters as needed
         # If 'testing' is True, set epsilon and alpha to 0
 
-        if testing == True:
+        if testing:
             self.epsilon = 0
             self.alpha = 0
         else:
@@ -80,7 +80,8 @@ class LearningAgent(Agent):
         ###########
         # Calculate the maximum Q-value of all actions for a given state
 
-        maxQ = max(self.Q[state], key=self.Q[state].get)
+        # maxQ = max(self.Q[state], key=self.Q[state].get)
+        maxQ = max(self.Q[state].values())
 
         return maxQ 
 
@@ -95,13 +96,9 @@ class LearningAgent(Agent):
         # If it is not, create a new dictionary for that state
         #   Then, for each action available, set the initial Q-value to 0.0
 
-        if self.learning == True:
+        if self.learning:
             if state not in self.Q.keys():
-                new_dict = dict()
-                for action in self.valid_actions:
-                    new_dict[action] = 0.0
-
-                self.Q[state] = new_dict
+                self.Q[state] = {action: 0.0 for action in self.valid_actions}
 
         return
 
@@ -122,11 +119,17 @@ class LearningAgent(Agent):
         # When learning, choose a random action with 'epsilon' probability
         #   Otherwise, choose an action with the highest Q-value for the current state
 
-        if self.learning == True:
-            if self.epsilon > random.random(): # random floating point number in the range [0.0, 1.0)
-                action = random.choice(self.valid_actions)
-            else:
-                action = self.get_maxQ(state)
+        if self.learning and self.epsilon < random.random():
+            maxQ = self.get_maxQ(state)
+            actions = []
+
+            # check if more than one action exists with this Q value
+            for action, q_value in self.Q[state].iteritems():
+                if q_value == maxQ:
+                    actions.append(action)
+
+            action = random.choice(actions)
+
         else:
             action = random.choice(self.valid_actions)
 
@@ -144,7 +147,7 @@ class LearningAgent(Agent):
         # When learning, implement the value iteration update rule
         #   Use only the learning rate 'alpha' (do not use the discount factor 'gamma')
 
-        if self.learning == True:
+        if self.learning:
             self.Q[state][action] = self.alpha * reward + (1 - self.alpha) * self.Q[state][action]
 
         return
